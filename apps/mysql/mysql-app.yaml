@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mysql
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: ghost-project
+
+  source:
+    repoURL: registry-1.docker.io/bitnamicharts
+    chart: mysql
+    targetRevision: 14.0.5
+
+    helm:
+      releaseName: mysql
+      values: |
+        architecture: standalone
+
+        auth:
+          database: ghost
+          username: ghost
+          existingSecret: mysql-auth
+
+        primary:
+          persistence:
+            enabled: true
+            storageClass: ebs-gp3
+            accessModes:
+              - ReadWriteOnce
+            size: 10Gi
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mysql
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

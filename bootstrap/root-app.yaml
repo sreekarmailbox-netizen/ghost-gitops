@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghost-root
+  namespace: argocd
+spec:
+  project: ghost-project
+
+  source:
+    repoURL: https://github.com/sreekarmailbox-netizen/ghost-gitops.git
+    targetRevision: main
+    path: apps
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghost
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: ghost-project
+
+  source:
+    repoURL: registry-1.docker.io/bitnamicharts
+    chart: ghost
+    targetRevision: 25.0.4
+
+    helm:
+      releaseName: ghost
+      values: |
+        replicaCount: 1
+
+        ghostUsername: admin
+        ghostEmail: admin@example.com
+        ghostBlogTitle: AWS EKS Ghost Blog
+
+        ghostHost: ghost.example.com
+        ghostEnableHttps: true
+        existingSecret: ghost-auth
+
+        service:
+          type: ClusterIP
+          ports:
+            http: 80
+
+        persistence:
+          enabled: true
+          storageClass: efs-sc
+          accessModes:
+            - ReadWriteMany
+          size: 10Gi
+
+        mysql:
+          enabled: false
+
+        externalDatabase:
+          host: mysql.mysql.svc.cluster.local
+          port: 3306
+          user: ghost
+          database: ghost
+          existingSecret: ghost-db-auth
+
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ghost
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
